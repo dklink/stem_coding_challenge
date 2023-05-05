@@ -1,17 +1,19 @@
 from flask import Flask, request
 
-from db_manager import DBManager
-from resources.mood import Mood
+from moods_app.db_manager import DBManager
+from moods_app.resources.mood import Mood
 
 app = Flask(__name__)
+
+MOODS_TABLE_PATH = "tables/moods.csv"
 
 
 @app.post("/moods")
 def add_mood():
-    user_id = request.form["user"]
+    user_id = int(request.form["user"])
     emotional_state = request.form["emotional_state"]
-    longitude = request.form["longitude"]
-    latitude = request.form["latitude"]
+    longitude = float(request.form["longitude"])
+    latitude = float(request.form["latitude"])
 
     # value checking goes here - not implemented
 
@@ -24,8 +26,8 @@ def add_mood():
     )
 
     # persist mood to database
-    db_manager = DBManager()
-    db_manager.write_mood(mood=mood)
+    db_manager = DBManager(moods_table_path=MOODS_TABLE_PATH)
+    db_manager.write_new_mood(mood=mood)
 
     return "Success", 201
 

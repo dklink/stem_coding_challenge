@@ -8,7 +8,7 @@ r = requests.post(
             "user": 123,
             "longitude": -122.4,
             "latitude": 37.8,
-            "emotional_state": "happy",
+            "emotional_state": "sad",
         },
     )
 #r = requests.get(base + "/moods/frequency-distribution?user=123")

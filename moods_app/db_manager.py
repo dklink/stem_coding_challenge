@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 import os
@@ -40,10 +40,12 @@ class DBManager:
         table = pd.concat([table, new_row])
         table.to_csv(self.moods_table_path)
 
-    def get_all_moods_for_user(self, user_id: int) -> List[Mood]:
-        """retrieves all moods and filters by provided user_id"""
+    def retreive_moods(self, user_id: int, emotional_state: Optional[str]=None) -> List[Mood]:
+        """Filters moods by user_id, and emotional_state (optionally).  Returns a list of mood objects."""
         table = self._read_table()
         filtered = table[table["user_id"] == user_id]
+        if emotional_state is not None:
+            filtered = filtered[filtered["emotional_state"] == emotional_state]
         return [
             Mood(
                 user_id=row["user_id"],

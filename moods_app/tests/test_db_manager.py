@@ -93,15 +93,15 @@ def test_write_multiple_moods():
         assert contents.iloc[1]["user_id"] == mood2.user_id
 
 
-def test_get_all_moods_for_user_empty_table():
+def test_retrieve_moods_empty_table():
     with NamedTemporaryFile() as tmp:
         manager = DBManager(moods_table_path=tmp.name)
-        result = manager.get_all_moods_for_user(user_id=0)
+        result = manager.retreive_moods(user_id=0)
 
         assert len(result) == 0
 
 
-def test_get_all_moods_for_user():
+def test_retreive_moods_by_user():
     with NamedTemporaryFile() as tmp:
         # populate db with some data
         columns = ["id", "user_id", "latitude", "longitude", "emotional_state"]
@@ -115,9 +115,32 @@ def test_get_all_moods_for_user():
 
         # set up manager
         manager = DBManager(moods_table_path=tmp.name)
-        results = manager.get_all_moods_for_user(user_id=456)
+        results = manager.retreive_moods(user_id=456)
 
         # make sure we got all the records, and no extraneous records
         assert len(results) == 3
         assert all(mood.user_id == 456 for mood in results)
         assert set(mood.emotional_state for mood in results) == {"happy", "neutral", "sad"}
+
+
+
+def test_retrieve_moods_by_user_and_emotional_state():
+    with NamedTemporaryFile() as tmp:
+        # populate db with some data
+        columns = ["id", "user_id", "latitude", "longitude", "emotional_state"]
+        records = [
+            [0, 123, 71.5, 123.2, "happy"],
+            [1, 456, 23.2, -100, "sad"],
+            [2, 456, 22.8, -99, "neutral"],
+            [3, 456, 23.3, -101, "happy"],
+        ]   
+        pd.DataFrame(records, columns=columns).set_index("id").to_csv(tmp)
+
+        # set up manager
+        manager = DBManager(moods_table_path=tmp.name)
+        results = manager.retreive_moods(user_id=456, emotional_state="neutral")
+
+        # make sure we got all the records, and no extraneous records
+        assert len(results) == 1
+        assert results[0].user_id == 456
+        assert results[0].emotional_state == "neutral"

@@ -2,7 +2,7 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 from pathlib import Path
 
 from moods_app.db_manager import DBManager
-from moods_app.resources.mood import Mood
+from moods_app.resources.mood import MoodCapture, Mood
 
 import pandas as pd
 
@@ -14,7 +14,7 @@ def test_create_new_table_no_file():
         assert not table.exists()
 
         # create a db manager for this path
-        manager = DBManager(moods_table_path=table)
+        manager = DBManager(mood_captures_table_path=table)
 
         # check the manager created the file
         assert table.exists()
@@ -22,7 +22,7 @@ def test_create_new_table_no_file():
         # check the table is empty and has correct columns
         df = pd.read_csv(table)
         assert len(df) == 0
-        assert set(df.columns) == {"id", "user_id", "latitude", "longitude", "emotional_state"}
+        assert set(df.columns) == {"id", "user_id", "latitude", "longitude", "mood"}
 
 
 def test_create_new_table_empty_file():
@@ -32,7 +32,7 @@ def test_create_new_table_empty_file():
         table.touch()
 
         # create a db manager for this path
-        manager = DBManager(moods_table_path=table)
+        manager = DBManager(mood_captures_table_path=table)
 
         # check the manager created the file
         assert table.exists()
@@ -40,21 +40,21 @@ def test_create_new_table_empty_file():
         # check the table is empty and has correct columns
         df = pd.read_csv(table)
         assert len(df) == 0
-        assert set(df.columns) == {"id", "user_id", "latitude", "longitude", "emotional_state"}
+        assert set(df.columns) == {"id", "user_id", "latitude", "longitude", "mood"}
 
 
-def test_write_mood():
-    mood1 = Mood(
+def test_write_new_mood_capture():
+    mood1 = MoodCapture(
         user_id=123,
         latitude=71.5,
         longitude=-123.2,
-        emotional_state="happy",
+        mood=Mood.HAPPY,
     )
 
     with TemporaryDirectory() as tmpdir:
         table = Path(tmpdir) / "moods.csv"
-        manager = DBManager(moods_table_path=table)
-        manager.write_new_mood(mood1)
+        manager = DBManager(mood_captures_table_path=table)
+        manager.write_new_mood_capture(mood1)
 
         contents = pd.read_csv(table)
         assert len(contents) == 1
@@ -62,28 +62,28 @@ def test_write_mood():
         assert contents["user_id"].item() == mood1.user_id
         assert contents["latitude"].item() == mood1.latitude
         assert contents["longitude"].item() == mood1.longitude
-        assert contents["emotional_state"].item() == mood1.emotional_state
+        assert contents["mood"].item() == mood1.mood.value
 
 
-def test_write_multiple_moods():
-    mood1 = Mood(
+def test_write_new_mood_captures_multiple():
+    mood1 = MoodCapture(
         user_id=123,
         latitude=71.5,
         longitude=-123.2,
-        emotional_state="happy",
+        mood=Mood.HAPPY,
     )
-    mood2 = Mood(
+    mood2 = MoodCapture(
         user_id=456,
         latitude=0,
         longitude=-10,
-        emotional_state="sad",
+        mood=Mood.SAD,
     )
 
     with TemporaryDirectory() as tmpdir:
         table = Path(tmpdir) / "moods.csv"
-        manager = DBManager(moods_table_path=table)
-        manager.write_new_mood(mood1)
-        manager.write_new_mood(mood2)
+        manager = DBManager(mood_captures_table_path=table)
+        manager.write_new_mood_capture(mood1)
+        manager.write_new_mood_capture(mood2)
 
         contents = pd.read_csv(table)
         assert len(contents) == 2
@@ -93,18 +93,18 @@ def test_write_multiple_moods():
         assert contents.iloc[1]["user_id"] == mood2.user_id
 
 
-def test_retrieve_moods_empty_table():
+def test_retrieve_mood_captures_empty_table():
     with NamedTemporaryFile() as tmp:
-        manager = DBManager(moods_table_path=tmp.name)
-        result = manager.retreive_moods(user_id=0)
+        manager = DBManager(mood_captures_table_path=tmp.name)
+        result = manager.retreive_mood_captures(user_id=0)
 
         assert len(result) == 0
 
 
-def test_retreive_moods_by_user():
+def test_retreive_mood_captures_by_user():
     with NamedTemporaryFile() as tmp:
         # populate db with some data
-        columns = ["id", "user_id", "latitude", "longitude", "emotional_state"]
+        columns = ["id", "user_id", "latitude", "longitude", "mood"]
         records = [
             [0, 123, 71.5, 123.2, "happy"],
             [1, 456, 23.2, -100, "sad"],
@@ -114,20 +114,20 @@ def test_retreive_moods_by_user():
         pd.DataFrame(records, columns=columns).set_index("id").to_csv(tmp)
 
         # set up manager
-        manager = DBManager(moods_table_path=tmp.name)
-        results = manager.retreive_moods(user_id=456)
+        manager = DBManager(mood_captures_table_path=tmp.name)
+        results = manager.retreive_mood_captures(user_id=456)
 
         # make sure we got all the records, and no extraneous records
         assert len(results) == 3
         assert all(mood.user_id == 456 for mood in results)
-        assert set(mood.emotional_state for mood in results) == {"happy", "neutral", "sad"}
+        assert set(mood.mood.value for mood in results) == {"happy", "neutral", "sad"}
 
 
 
-def test_retrieve_moods_by_user_and_emotional_state():
+def test_retrieve_mood_captures_by_user_and_mood():
     with NamedTemporaryFile() as tmp:
         # populate db with some data
-        columns = ["id", "user_id", "latitude", "longitude", "emotional_state"]
+        columns = ["id", "user_id", "latitude", "longitude", "mood"]
         records = [
             [0, 123, 71.5, 123.2, "happy"],
             [1, 456, 23.2, -100, "sad"],
@@ -137,10 +137,10 @@ def test_retrieve_moods_by_user_and_emotional_state():
         pd.DataFrame(records, columns=columns).set_index("id").to_csv(tmp)
 
         # set up manager
-        manager = DBManager(moods_table_path=tmp.name)
-        results = manager.retreive_moods(user_id=456, emotional_state="neutral")
+        manager = DBManager(mood_captures_table_path=tmp.name)
+        results = manager.retreive_mood_captures(user_id=456, mood=Mood.NEUTRAL)
 
         # make sure we got all the records, and no extraneous records
         assert len(results) == 1
         assert results[0].user_id == 456
-        assert results[0].emotional_state == "neutral"
+        assert results[0].mood.value == "neutral"

@@ -1,4 +1,13 @@
-class Mood:
+from enum import Enum
+
+
+class Mood(Enum):
+    HAPPY = "happy"
+    SAD = "sad"
+    NEUTRAL = "neutral"
+
+
+class MoodCapture:
     """Represents a mood capture from our shiny new phone camera."""
 
     def __init__(
@@ -6,9 +15,9 @@ class Mood:
             user_id: int,
             longitude: float,
             latitude: float,
-            emotional_state: str,
+            mood: Mood,
             ):
         self.user_id = user_id
         self.longitude = longitude
         self.latitude = latitude
-        self.emotional_state = emotional_state
+        self.mood = mood

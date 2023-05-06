@@ -2,43 +2,43 @@ import requests
 
 base = "http://127.0.0.1:5000"
 
-r = requests.post(
-    base + "/moods",
+r1 = requests.post(
+    base + "/mood-captures",
     data={
             "user_id": 123,
             "longitude": -122.4,
             "latitude": 37.8,
-            "emotional_state": "sad",
+            "mood": "sad",
         },
     )
-r = requests.post(
-    base + "/moods",
+r2 = requests.post(
+    base + "/mood-captures",
     data={
             "user_id": 123,
             "longitude": -130.5,
             "latitude": 90,
-            "emotional_state": "happy",
+            "mood": "happy",
         },
     )
-r = requests.post(
-    base + "/moods",
+r3 = requests.post(
+    base + "/mood-captures",
     data={
             "user_id": 123,
             "longitude": -120.2,
             "latitude": -45,
-            "emotional_state": "happy",
+            "mood": "happy",
         },
     )
-r = requests.post(
-    base + "/moods",
+r4 = requests.post(
+    base + "/mood-captures",
     data={
             "user_id": 456,
             "longitude": -122.4,
             "latitude": 37.8,
-            "emotional_state": "happy",
+            "mood": "happy",
         },
     )
 
-# r = requests.get(base + "/moods/frequency-distribution?user_id=1")
+r5 = requests.get(base + "/mood-captures/frequency-distribution?user_id=123")
 
-r = requests.get(base + "/moods/nearest-happy?user_id=123&latitude=0&longitude=-120")
+r6 = requests.get(base + "/mood-captures/nearest-happy?user_id=123&latitude=0&longitude=-120")

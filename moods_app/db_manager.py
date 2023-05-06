@@ -4,7 +4,7 @@ from typing import List, Optional
 import pandas as pd
 import os
 
-from moods_app.resources.mood import MoodCapture, Mood
+from moods_app.resources.mood_capture import MoodCapture, Mood
 
 
 class DBManager:

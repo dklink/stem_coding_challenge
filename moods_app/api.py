@@ -1,7 +1,7 @@
 from flask import Flask, request
 
 from moods_app.db_manager import DBManager
-from moods_app.resources.mood import MoodCapture, Mood
+from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app import geo_utils
 
 app = Flask(__name__)

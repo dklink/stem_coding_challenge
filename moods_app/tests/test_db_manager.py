@@ -2,7 +2,7 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 from pathlib import Path
 
 from moods_app.db_manager import DBManager
-from moods_app.resources.mood import MoodCapture, Mood
+from moods_app.resources.mood_capture import MoodCapture, Mood
 
 import pandas as pd
 

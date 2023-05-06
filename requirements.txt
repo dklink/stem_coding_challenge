@@ -1,5 +1,5 @@
 requests
 flask
-pandas
 pytest
 haversine
+sqlalchemy

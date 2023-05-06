@@ -1,8 +1,10 @@
 from haversine import haversine
 from typing import Tuple, List, Optional
 
+from moods_app.resources.mood_capture import Mood
 
-def nearest_neighbor(target: Tuple[float, float], locations: List[Tuple[float, float]]) -> Optional[Tuple[float, float]]:
+
+def nearest_neighbor_latlon(target: Tuple[float, float], locations: List[Tuple[float, float]]) -> Optional[Tuple[float, float]]:
     """Performs a nearest neighbor search over a set of latitude/longitude locations, using haversine distance
     :param target: (latitude, longitude) tuple
     :param locations: list of (latitude, longitude) tuples

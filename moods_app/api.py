@@ -1,12 +1,13 @@
 from flask import Flask, request
 
-from moods_app.db_manager import DBManager
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
+
 from moods_app.resources.mood_capture import MoodCapture, Mood
-from moods_app import geo_utils
+from moods_app import utils
 
 app = Flask(__name__)
-
-MOOD_CAPTURES_TABLE_PATH = "tables/mood_captures.csv"
+engine = create_engine("sqlite:///database.db")
 
 
 @app.post("/mood-captures")
@@ -17,14 +18,15 @@ def add_mood_capture():
         return message, code
 
     # construct mood capture object and persist to database
-    mood_capture = MoodCapture(
-        user_id=int(request.form["user_id"]),
-        longitude=float(request.form["longitude"]),
-        latitude=float(request.form["latitude"]),
-        mood=Mood(request.form["mood"].lower()),
-    )
-    db_manager = DBManager(mood_captures_table_path=MOOD_CAPTURES_TABLE_PATH)
-    db_manager.write_new_mood_capture(mood_capture=mood_capture)
+    with Session(engine) as session:
+        mood_capture = MoodCapture(
+            user_id=int(request.form["user_id"]),
+            longitude=float(request.form["longitude"]),
+            latitude=float(request.form["latitude"]),
+            mood=Mood(request.form["mood"].lower()),
+        )
+        session.add(mood_capture)
+        session.commit()
 
     return "Success", 201
 
@@ -37,15 +39,18 @@ def get_mood_distribution():
     user_id = int(request.args["user_id"])
 
     # retreive all stored moods for this user
-    db_manager = DBManager(mood_captures_table_path=MOOD_CAPTURES_TABLE_PATH)
-    mood_captures = db_manager.retreive_mood_captures(user_id=user_id)
-    if not mood_captures:
+    with Session(engine) as session:
+        moods = session.scalars(
+            select(MoodCapture.mood)
+            .where(MoodCapture.user_id == user_id)
+        ).all()
+    if not moods:
         return "No mood captures found for this user", 404
 
     # calculate and return distribution
     distribution = {key.value: 0 for key in Mood}
-    for capture in mood_captures:
-        distribution[capture.mood.value] += 1
+    for mood in moods:
+        distribution[mood.value] += 1
 
     return distribution, 200
 
@@ -60,17 +65,23 @@ def get_nearest_happy_location():
     latitude = float(request.args["latitude"])
 
     # retreive all happy mood captures for this user
-    db_manager = DBManager(mood_captures_table_path=MOOD_CAPTURES_TABLE_PATH)
-    happy_captures = db_manager.retreive_mood_captures(user_id=user_id, mood=Mood.HAPPY)
-    if not happy_captures:
+    with Session(engine) as session:
+        happy_locations = session.execute(
+            select(MoodCapture.latitude, MoodCapture.longitude)
+            .where(
+                MoodCapture.user_id == user_id,
+                MoodCapture.mood == Mood.HAPPY,
+            )
+        ).all()
+    if not happy_locations:
         return "No happy mood captures found for this user", 404
-    
+
     # find the nearest of these captures to the input lat/lon
-    nearest = geo_utils.nearest_neighbor(
+    nearest = utils.nearest_neighbor_latlon(
         target=(latitude, longitude),
-        locations=[(capture.latitude, capture.longitude) for capture in happy_captures],
+        locations=happy_locations,
     )
-    
+
     return {"latitude": nearest[0], "longitude": nearest[1]}, 200
 
 
@@ -100,5 +111,5 @@ def validate_input(args: dict):
             return "'longitude' must be numeric", 400
         if not (-180 <= longitude <= 180):
             return "'longitude' must be in range [-180, 180]", 400
-    
+
     return None, None

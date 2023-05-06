@@ -1,9 +1,9 @@
 from flask import Flask, request
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from moods_app.resources.mood_capture import MoodCapture, Mood
+from moods_app.resources.mood_capture import MoodCapture, Mood, get_all_moods_for_user, get_locations_of_happy_moods_for_user
 from moods_app import utils
 
 app = Flask(__name__)
@@ -23,7 +23,7 @@ def add_mood_capture():
             user_id=int(request.form["user_id"]),
             longitude=float(request.form["longitude"]),
             latitude=float(request.form["latitude"]),
-            mood=Mood(request.form["mood"].lower()),
+            mood=Mood[request.form["mood"].lower()],
         )
         session.add(mood_capture)
         session.commit()
@@ -40,17 +40,14 @@ def get_mood_distribution():
 
     # retreive all stored moods for this user
     with Session(engine) as session:
-        moods = session.scalars(
-            select(MoodCapture.mood)
-            .where(MoodCapture.user_id == user_id)
-        ).all()
+        moods = get_all_moods_for_user(user_id=user_id, session=session)
     if not moods:
         return "No mood captures found for this user", 404
 
     # calculate and return distribution
-    distribution = {key.value: 0 for key in Mood}
+    distribution = {key.name: 0 for key in Mood}
     for mood in moods:
-        distribution[mood.value] += 1
+        distribution[mood.name] += 1
 
     return distribution, 200
 
@@ -66,13 +63,7 @@ def get_nearest_happy_location():
 
     # retreive all happy mood captures for this user
     with Session(engine) as session:
-        happy_locations = session.execute(
-            select(MoodCapture.latitude, MoodCapture.longitude)
-            .where(
-                MoodCapture.user_id == user_id,
-                MoodCapture.mood == Mood.HAPPY,
-            )
-        ).all()
+        happy_locations = get_locations_of_happy_moods_for_user(user_id=user_id, session=session)
     if not happy_locations:
         return "No happy mood captures found for this user", 404
 
@@ -94,7 +85,7 @@ def validate_input(args: dict):
         return "'user_id' must be an integer", 400
     if "mood" in args:
         try:
-            Mood(args["mood"].lower())
+            Mood[args["mood"].lower()]
         except ValueError:
             return "Provided mood is not supported", 400
     if "latitude" in args:

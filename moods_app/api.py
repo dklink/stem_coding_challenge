@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 MOOD_CAPTURES_TABLE_PATH = "tables/mood_captures.csv"
 
+
 @app.post("/mood-captures")
 def add_mood_capture():
     # validate args
@@ -69,13 +70,14 @@ def get_nearest_happy_location():
         target=(latitude, longitude),
         locations=[(capture.latitude, capture.longitude) for capture in happy_captures],
     )
+    
     return {"latitude": nearest[0], "longitude": nearest[1]}, 200
 
 
 def validate_input(args: dict):
     """validates any of user_id, mood, latitude, and longitude that exist in args.
     returns message and error code upon the first problem
-    if no problems, return (None, None) tuple
+    if no problems, returns (None, None) tuple
     """
     if "user_id" in args and not args["user_id"].isnumeric():
         return "'user_id' must be an integer", 400
@@ -90,13 +92,13 @@ def validate_input(args: dict):
         except ValueError:
             return "'latitude' must be numeric", 400
         if not (-90 <= latitude <= 90):
-            return "latitude must be in range [-90, 90]", 400
+            return "'latitude' must be in range [-90, 90]", 400
     if "longitude" in args:
         try:
             longitude = float(args["longitude"])
         except ValueError:
             return "'longitude' must be numeric", 400
         if not (-180 <= longitude <= 180):
-            return "longitude must be in range [-180, 180]", 400
+            return "'longitude' must be in range [-180, 180]", 400
     
     return None, None

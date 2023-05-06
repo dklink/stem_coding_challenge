@@ -1,35 +1,34 @@
 from flask import Flask, request
 
 from moods_app.db_manager import DBManager
-from moods_app.resources.mood import Mood
+from moods_app.resources.mood import MoodCapture, Mood
 from moods_app import geo_utils
 
 app = Flask(__name__)
 
-MOODS_TABLE_PATH = "tables/moods.csv"
-VALID_EMOTIONAL_STATES = {"happy", "sad", "neutral"}
+MOOD_CAPTURES_TABLE_PATH = "tables/mood_captures.csv"
 
-@app.post("/moods")
-def add_mood():
+@app.post("/mood-captures")
+def add_mood_capture():
     # validate args
     message, code = validate_input(request.form)
     if code is not None:
         return message, code
 
-    # construct mood object and persist to database
-    mood = Mood(
+    # construct mood capture object and persist to database
+    mood_capture = MoodCapture(
         user_id=int(request.form["user_id"]),
         longitude=float(request.form["longitude"]),
         latitude=float(request.form["latitude"]),
-        emotional_state=request.form["emotional_state"].lower(),
+        mood=Mood(request.form["mood"].lower()),
     )
-    db_manager = DBManager(moods_table_path=MOODS_TABLE_PATH)
-    db_manager.write_new_mood(mood=mood)
+    db_manager = DBManager(mood_captures_table_path=MOOD_CAPTURES_TABLE_PATH)
+    db_manager.write_new_mood_capture(mood_capture=mood_capture)
 
     return "Success", 201
 
 
-@app.get("/moods/frequency-distribution")
+@app.get("/mood-captures/frequency-distribution")
 def get_mood_distribution():
     message, code = validate_input(request.args)
     if code is not None:
@@ -37,20 +36,20 @@ def get_mood_distribution():
     user_id = int(request.args["user_id"])
 
     # retreive all stored moods for this user
-    db_manager = DBManager(moods_table_path=MOODS_TABLE_PATH)
-    moods = db_manager.retreive_moods(user_id=user_id)
-    if not moods:
-        return "No moods found for this user", 404
+    db_manager = DBManager(mood_captures_table_path=MOOD_CAPTURES_TABLE_PATH)
+    mood_captures = db_manager.retreive_mood_captures(user_id=user_id)
+    if not mood_captures:
+        return "No mood captures found for this user", 404
 
     # calculate and return distribution
-    distribution = {state: 0 for state in VALID_EMOTIONAL_STATES}
-    for mood in moods:
-        distribution[mood.emotional_state] += 1
+    distribution = {key.value: 0 for key in Mood}
+    for capture in mood_captures:
+        distribution[capture.mood.value] += 1
 
     return distribution, 200
 
 
-@app.route("/moods/nearest-happy")
+@app.route("/mood-captures/nearest-happy")
 def get_nearest_happy_location():
     message, code = validate_input(request.args)
     if code is not None:
@@ -59,29 +58,32 @@ def get_nearest_happy_location():
     longitude = float(request.args["longitude"])
     latitude = float(request.args["latitude"])
 
-    # retreive all happy moods for this user
-    db_manager = DBManager(moods_table_path=MOODS_TABLE_PATH)
-    happy_moods = db_manager.retreive_moods(user_id=user_id, emotional_state="happy")
-    if not happy_moods:
-        return "No happy moods found for this user", 404
+    # retreive all happy mood captures for this user
+    db_manager = DBManager(mood_captures_table_path=MOOD_CAPTURES_TABLE_PATH)
+    happy_captures = db_manager.retreive_mood_captures(user_id=user_id, mood=Mood.HAPPY)
+    if not happy_captures:
+        return "No happy mood captures found for this user", 404
     
-    # find the nearest of these moods to the input lat/lon
+    # find the nearest of these captures to the input lat/lon
     nearest = geo_utils.nearest_neighbor(
         target=(latitude, longitude),
-        locations=[(mood.latitude, mood.longitude) for mood in happy_moods],
+        locations=[(capture.latitude, capture.longitude) for capture in happy_captures],
     )
     return {"latitude": nearest[0], "longitude": nearest[1]}, 200
 
 
 def validate_input(args: dict):
-    """validates any of user_id, emotional_state, latitude, and longitude that exist in args.
+    """validates any of user_id, mood, latitude, and longitude that exist in args.
     returns message and error code upon the first problem
     if no problems, return (None, None) tuple
     """
     if "user_id" in args and not args["user_id"].isnumeric():
         return "'user_id' must be an integer", 400
-    if "emotional_state" in args and args["emotional_state"].lower() not in VALID_EMOTIONAL_STATES:
-        return "Invalid emotional state", 400
+    if "mood" in args:
+        try:
+            Mood(args["mood"].lower())
+        except ValueError:
+            return "Provided mood is not supported", 400
     if "latitude" in args:
         try:
             latitude = float(args["latitude"])

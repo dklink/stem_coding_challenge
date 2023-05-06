@@ -6,7 +6,7 @@ class Mood:
             user_id: int,
             longitude: float,
             latitude: float,
-            emotional_state: str
+            emotional_state: str,
             ):
         self.user_id = user_id
         self.longitude = longitude

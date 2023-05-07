@@ -28,7 +28,7 @@ def add_mood_capture():
         session.add(mood_capture)
         session.commit()
 
-    return "Success", 201
+    return "Success", 201  # TODO: return mood capture
 
 
 @app.get("/mood-captures/frequency-distribution")

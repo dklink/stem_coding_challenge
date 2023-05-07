@@ -7,7 +7,7 @@ from moods_app.resources.mood_capture import MoodCapture, Mood, get_all_moods_fo
 from moods_app import utils
 
 app = Flask(__name__)
-engine = create_engine("sqlite:///database.db")  # TODO put this in a .env file
+engine = create_engine("sqlite:///database/sqlite.db")  # TODO put this in a .env file
 
 
 @app.post("/mood-captures")

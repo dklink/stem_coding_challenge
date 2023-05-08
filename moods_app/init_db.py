@@ -1,7 +1,7 @@
 """tool to initialize a new sqlite db from our model definitions"""
+from pathlib import Path
 
 from moods_app.resources.base import Base
-from pathlib import Path
 import moods_app.resources.mood_capture
 import moods_app.resources.user
 

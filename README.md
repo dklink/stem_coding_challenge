@@ -74,10 +74,7 @@ HTTP Status 200, and a response with the following parameters:
 The relevant HTTP Status code and a string describing the problem.  If no happy mood captures are found for the user, returns status code 404.
 
 ## 4. POST `/users`
-Creates a new user, and returns a unique id and api key they can use for authentication. Required body parameters:
-| Body Parameter | Data Type | Description |
-| -------------- | --------- | ----------- |
-| `name` | `string` | Unique name for the user |
+Creates a new user, and returns a unique id and api key they can use for authentication.  No body parameters needed.
 
 ### Success Response
 HTTP Status 201, and a response with the following parameters:
@@ -85,10 +82,6 @@ HTTP Status 201, and a response with the following parameters:
 | -- | -- | -- |
 | `user_id` | `integer` | The ID for the new user |
 | `api_key` | `string` | An api key that can be used to authenticate this user |
-| `name` | `string` | The name recorded for the user |
-
-### Error Response
-The relevant HTTP Status code and a string describing the problem.
 
 # Data Model
 

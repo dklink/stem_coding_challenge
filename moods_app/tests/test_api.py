@@ -1,24 +1,17 @@
 import pytest
 from moods_app import api
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 
 from moods_app.resources.base import Base
 from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app.resources.user import User
 
-engine = create_engine(f"sqlite://")  # in memory db, for all tests to access
-
 
 @pytest.fixture
-def client():
-    Base.metadata.create_all(engine)  # initialize the db
-    
-    app = api.create_app(test_config={"TESTING": True, "TEST_DB_ENGINE": engine})
+def client(session):
+    app = api.create_app(test_config={"TESTING": True, "TEST_DB_SESSION": session})
     with app.test_client() as client:
         yield client
-    
-    Base.metadata.drop_all(engine)  # tear down the db
 
 
 def test_add_user_response(client):
@@ -31,18 +24,16 @@ def test_add_user_response(client):
     assert len(response["api_key"]) > 0  # not an empty string
 
 
-def test_add_user_persist(client):
+def test_add_user_persist(client, session):
     """test that calling the add user endpoint actually adds a user to the db"""
-    with Session(engine) as session:
-        result = session.query(User).all()
+    result = session.query(User).all()
     assert len(result) == 0
 
     response = client.post("/users").json
 
-    with Session(engine) as session:
-        result = session.query(User).all()
-        assert len(result) == 1
-        assert result[0].id == response["user_id"]
+    result = session.query(User).all()
+    assert len(result) == 1
+    assert result[0].id == response["user_id"]
 
 
 def test_add_two_users_unique(client):
@@ -54,24 +45,29 @@ def test_add_two_users_unique(client):
     assert response1.json["api_key"] != response2.json["api_key"]
 
 
-'''
-def test_add_mood_capture_response(client):
+def test_add_mood_capture_response(client, session):
     """test that adding a new mood capture provides the expected response"""
+    user = User(api_key="123")
+    session.add(user)
+    session.commit()
+    assert user.id == 1
+
     response = client.post("/mood-captures", data={
-        "user_id": 42,
+        "user_id": 1,
         "latitude": 0.01,
         "longitude": 124.2,
         "mood": "happy",
+        "api_key": "123",
     })
     response = response.json
 
     assert isinstance(response["mood_capture_id"], int)
-    assert response["user_id"] == 42
+    assert response["user_id"] == 1
     assert response["latitude"] == 0.01
     assert response["longitude"] == 124.2
     assert response["mood"] == "happy"
 
-
+'''
 def test_add_mood_capture_persist(client):
     """test that calling the add mood capture endpoint adds the entity to the db"""
     with Session(engine) as session:
@@ -107,15 +103,38 @@ def test_get_nearest_happy_location(client):
     pass
 
 
-def test_authentication_success(client):
-    with Session(engine) as session:
-        user = User(api_key="password")
-        session.add(user)
-        session.commit()
+def test_authentication_success(client, session):
+    user = User(api_key="password")
+    session.add(user)
+    session.commit()
 
-        auth_error = api.authenticate_user(
-            user_id=user.id,
-            api_key="password",
-            session=session,
-        )
-        assert auth_error is None
+    auth_error = api.authenticate_user(
+        user_id=user.id,
+        api_key="password",
+        session=session,
+    )
+    assert auth_error is None
+
+
+def test_authentication_failure_no_user(client, session):
+    auth_error = api.authenticate_user(
+        user_id=123,
+        api_key="password",
+        session=session,
+    )
+    assert auth_error[1] == 404
+    assert auth_error[0] == "User 123 does not exist."
+
+
+def test_authentication_failure_incorrect_api_key(client, session):
+    user = User(api_key="correct")
+    session.add(user)
+    session.commit()
+
+    auth_error = api.authenticate_user(
+        user_id=user.id,
+        api_key="incorrect",
+        session=session,
+    )
+    assert auth_error[1] == 401
+    assert auth_error[0] == f"Invalid api key for user {user.id}."

@@ -3,21 +3,20 @@ from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app.resources.user import User
 from moods_app.resources.base import Base
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 
 @pytest.fixture()
-def session(engine):
-    with Session(engine) as session:
-        # insert some fake users for every session
-        user1 = User(api_key="123")
-        user2 = User(api_key="456")
-        session.add_all([user1, user2])
-        session.commit()
-        assert user1.id == 1
-        assert user2.id == 2
-        yield session
+def session(session):  # overload the fixture
+    # insert some fake users for every session, to satisfy foreign key
+    user1 = User(api_key="123")
+    user2 = User(api_key="456")
+    session.add_all([user1, user2])
+    session.commit()
+    assert user1.id == 1
+    assert user2.id == 2
+    yield session
+
 
 @pytest.fixture()
 def dummy_captures():

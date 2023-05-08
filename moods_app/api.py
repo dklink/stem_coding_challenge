@@ -1,4 +1,3 @@
-from pathlib import Path
 from flask import Flask, request
 
 from sqlalchemy import create_engine
@@ -9,7 +8,8 @@ from moods_app.resources.user import User
 from moods_app.resources.base import Base
 from moods_app import utils
 
-DB_PATH = Path(__file__).parent / "database" / "sqlite.db"
+from moods_app.database import init_db
+
 
 
 def create_app(test_config=None):
@@ -19,21 +19,25 @@ def create_app(test_config=None):
 
     # initialize database engine
     if app.config["TESTING"]:
-        app.db_engine = app.config["TEST_DB_ENGINE"]
+        session = app.config["TEST_DB_SESSION"]
     else:
-        app.db_engine = create_engine(f"sqlite:///{DB_PATH}")  # filesystem db
-    Base.metadata.create_all(app.db_engine)
+        init_db()
+        from database import db_session
+        session = db_session
 
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        session.remove()
+    
     ### ENDPOINTS ###
     @app.post("/users")
     def add_user():
         """adds a new user to the database, returning the new user's id and api key"""
-        with Session(app.db_engine) as session:
-            new_user = User.create_new_user(session=session)
-            return {
-                "user_id": new_user.id,
-                "api_key": new_user.api_key,
-            }
+        new_user = User.create_new_user(session=session)
+        return {
+            "user_id": new_user.id,
+            "api_key": new_user.api_key,
+        }
 
     @app.post("/mood-captures")
     def add_mood_capture():
@@ -41,19 +45,31 @@ def create_app(test_config=None):
         message, code = validate_input(request.form)
         if code is not None:
             return message, code
+        user_id = int(request.form["user_id"])
+        
+        # authenticate user
+        auth_error = authenticate_user(
+            user_id=user_id,
+            api_key=request.form["api_key"],
+            session=session,
+        )
 
         # construct mood capture object and persist to database
-        with Session(app.db_engine) as session:
-            mood_capture = MoodCapture(
-                user_id=int(request.form["user_id"]),
-                longitude=float(request.form["longitude"]),
-                latitude=float(request.form["latitude"]),
-                mood=Mood[request.form["mood"].lower()],
-            )
-            session.add(mood_capture)
-            session.commit()
-
-        return "Success", 201  # TODO: return mood capture
+        mood_capture = MoodCapture.create_new_mood_capture(
+            user_id=user_id,
+            longitude=float(request.form["longitude"]),
+            latitude=float(request.form["latitude"]),
+            mood=Mood[request.form["mood"].lower()],
+            session=session,
+        )
+    
+        return {
+            "mood_capture_id": mood_capture.id,
+            "user_id": mood_capture.user_id,
+            "latitude": mood_capture.latitude,
+            "longitude": mood_capture.longitude,
+            "mood": mood_capture.mood.name,
+        }, 201
 
 
     @app.get("/mood-captures/frequency-distribution")
@@ -64,8 +80,7 @@ def create_app(test_config=None):
         user_id = int(request.args["user_id"])
 
         # retreive all stored moods for this user
-        with Session(app.db_engine) as session:
-            moods = MoodCapture.get_all_moods_for_user(user_id=user_id, session=session)
+        moods = MoodCapture.get_all_moods_for_user(user_id=user_id, session=session)
         if not moods:
             return "No mood captures found for this user", 404
 
@@ -87,8 +102,7 @@ def create_app(test_config=None):
         latitude = float(request.args["latitude"])
 
         # retreive all happy mood captures for this user
-        with Session(app.db_engine) as session:
-            happy_locations = MoodCapture.get_locations_of_happy_moods_for_user(user_id=user_id, session=session)
+        happy_locations = MoodCapture.get_locations_of_happy_moods_for_user(user_id=user_id, session=session)
         if not happy_locations:
             return "No happy mood captures found for this user", 404
 
@@ -100,34 +114,48 @@ def create_app(test_config=None):
 
         return {"latitude": nearest[0], "longitude": nearest[1]}, 200
 
-
-    def validate_input(args: dict):
-        """validates any of user_id, mood, latitude, and longitude that exist in args.
-        returns message and error code upon the first problem
-        if no problems, returns (None, None) tuple
-        """
-        if "user_id" in args and not args["user_id"].isnumeric():
-            return "'user_id' must be an integer", 400
-        if "mood" in args:
-            try:
-                Mood[args["mood"].lower()]
-            except ValueError:
-                return "Provided mood is not supported", 400
-        if "latitude" in args:
-            try:
-                latitude = float(args["latitude"])
-            except ValueError:
-                return "'latitude' must be numeric", 400
-            if not (-90 <= latitude <= 90):
-                return "'latitude' must be in range [-90, 90]", 400
-        if "longitude" in args:
-            try:
-                longitude = float(args["longitude"])
-            except ValueError:
-                return "'longitude' must be numeric", 400
-            if not (-180 <= longitude <= 180):
-                return "'longitude' must be in range [-180, 180]", 400
-
-        return None, None
-
     return app
+
+
+def authenticate_user(user_id: int, api_key: str, session: Session):
+    """Check the user exists and the api key is correct.
+    Returns None on success, (message, code) tuple on failure."""
+    user = User.get_user_by_id(user_id=user_id, session=session)
+    if user is None:
+        return f"User {user_id} does not exist.", 404
+    elif user.api_key != api_key:
+        return f"Invalid api key for user {user_id}.", 401
+    else:
+        return None
+
+
+def validate_input(args: dict):
+    """validates any of user_id, mood, latitude, and longitude that exist in args.
+    returns message and error code upon the first problem
+    if no problems, returns (None, None) tuple
+    """
+    if "user_id" in args and not args["user_id"].isnumeric():
+        return "'user_id' must be an integer", 400
+    if "mood" in args:
+        try:
+            Mood[args["mood"].lower()]
+        except ValueError:
+            return "Provided mood is not supported", 400
+    if "latitude" in args:
+        try:
+            latitude = float(args["latitude"])
+        except ValueError:
+            return "'latitude' must be numeric", 400
+        if not (-90 <= latitude <= 90):
+            return "'latitude' must be in range [-90, 90]", 400
+    if "longitude" in args:
+        try:
+            longitude = float(args["longitude"])
+        except ValueError:
+            return "'longitude' must be numeric", 400
+        if not (-180 <= longitude <= 180):
+            return "'longitude' must be in range [-180, 180]", 400
+    if "api_key" in args and not isinstance(args["api_key"], str):
+        return "'api_key' must be a string", 400
+
+    return None, None

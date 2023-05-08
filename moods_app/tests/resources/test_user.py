@@ -1,14 +1,6 @@
-import pytest
 from moods_app.resources.base import Base
 from moods_app.resources.user import User
 
-from sqlalchemy.orm import Session
-
-
-@pytest.fixture()
-def session(engine):
-    with Session(engine) as session:
-        yield session
 
 def test_create_user(session):
     """make sure it creates a non-empty api key, and make sure it persists the user into the db"""

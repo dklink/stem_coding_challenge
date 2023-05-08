@@ -14,7 +14,7 @@ Stores a new mood capture for a given user and location. Required body parameter
 | `mood` | `string` | User's mood, must be one of {happy, sad, neutral}, case insensitive |
 
 ### Authentication
-The request must contain an Authorization header containing the user's API key, in format `Authorization: api_key=<api_key>`
+The request must contain an Authorization header containing the user's API key, in format `X-API-Key: <api_key>`
 
 ### Success Response
 HTTP Status 201, and a response with the following parameters:
@@ -37,7 +37,7 @@ Gets a user's moods as a frequency distribution.  Required query parameters:
 | user_id | `integer` | Unique identifier for the user |
 
 ### Authentication
-The request must contain an Authorization header containing the user's API key, in format `Authorization: api_key=<api_key>`
+The request must contain an Authorization header containing the user's API key, in format `x-api-key: <api_key>`
 
 ### Success Response
 HTTP Status 200 and a response with the following parameters:
@@ -61,7 +61,7 @@ Given a user and a target location, gets the location of their nearest happy moo
 | `longitude` | `float` | Longitude of the target location, as a decimal in [-180, 180] |
 
 ### Authentication
-The request must contain an Authorization header containing the user's API key, in format `Authorization: api_key=<api_key>`
+The request must contain an Authorization header containing the user's API key, in format `x-api-key: <api_key>`
 
 ### Success Response
 HTTP Status 200, and a response with the following parameters:

@@ -13,6 +13,14 @@ def client(session):
     with app.test_client() as client:
         yield client
 
+@pytest.fixture
+def one_user_session(session):
+    user = User(api_key="123")
+    session.add(user)
+    session.commit()
+    assert user.id == 1
+    yield session
+
 
 def test_add_user_response(client):
     """test adding a user provides expected response"""
@@ -45,20 +53,58 @@ def test_add_two_users_unique(client):
     assert response1.json["api_key"] != response2.json["api_key"]
 
 
-def test_add_mood_capture_response(client, session):
-    """test that adding a new mood capture provides the expected response"""
-    user = User(api_key="123")
-    session.add(user)
-    session.commit()
-    assert user.id == 1
+def test_add_mood_capture_improper_input(client):
+    """ensure the endpoint is checking the input"""
+    response = client.post("/mood-captures", data={
+        "user_id": "this should be an integer",
+        "latitude": "this should be a float",
+        "longitude": 124.2,
+        "mood": "happy",
+    },
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 400
 
+
+def test_add_mood_capture_no_such_user(client):
+    """test that adding a new mood capture provides the expected response"""
     response = client.post("/mood-captures", data={
         "user_id": 1,
         "latitude": 0.01,
         "longitude": 124.2,
         "mood": "happy",
-        "api_key": "123",
-    })
+    },
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 404
+    assert response.text == "User 1 does not exist."
+
+
+def test_add_mood_capture_incorrect_api_key(client, one_user_session):
+    """test that adding a new mood capture provides the expected response"""
+    response = client.post("/mood-captures", data={
+        "user_id": 1,
+        "latitude": 0.01,
+        "longitude": 124.2,
+        "mood": "happy",
+    },
+        headers={"x-api-key": "incorrect"},
+    )
+    assert response._status_code == 401
+    assert response.text == "Invalid api key for user 1."
+
+
+def test_add_mood_capture_response(client, one_user_session):
+    """test that adding a new mood capture provides the expected response"""
+    response = client.post("/mood-captures", data={
+        "user_id": 1,
+        "latitude": 0.01,
+        "longitude": 124.2,
+        "mood": "happy",
+    },
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 201
     response = response.json
 
     assert isinstance(response["mood_capture_id"], int)
@@ -67,34 +113,35 @@ def test_add_mood_capture_response(client, session):
     assert response["longitude"] == 124.2
     assert response["mood"] == "happy"
 
-'''
-def test_add_mood_capture_persist(client):
+
+def test_add_mood_capture_persist(client, one_user_session):
     """test that calling the add mood capture endpoint adds the entity to the db"""
-    with Session(engine) as session:
-        result = session.query(MoodCapture).all()
+    result = one_user_session.query(MoodCapture).all()
     assert len(result) == 0
 
-    
-
-    response1 = client.post("/users")
-    
-
-    response = client.post("/mood-captures/", data={
-        "user_id": response1.json,
+    response = client.post("/mood-captures", data={
+        "user_id": 1,
         "latitude": 0.01,
         "longitude": 124.2,
         "mood": "happy",
-    }).json
+    },
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 201
 
-    with Session(engine) as session:
-        result = session.query(MoodCapture).all()
-        import pdb; pdb.set_trace()
-        assert len(result) == 1
-        assert result[0].id == response["mood_capture_id"]
-'''
+    result = one_user_session.query(MoodCapture).all()
+    assert len(result) == 1
+    assert result[0].id == response.json["mood_capture_id"]
 
-def test_add_mood_capture_invalid_entry(client):
-    pass
+
+def test_get_mood_distribution_improper_input(client):
+    """ensure the endpoint is checking the input"""
+    response = client.post(
+        "/mood-captures",
+        data={"user_id": "this should be an integer"},
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 400
 
 def test_get_mood_distribution(client):
     pass

@@ -1,16 +1,11 @@
 from flask import Flask, request
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-
 from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app.resources.user import User
 from moods_app.resources.base import Base
 from moods_app import utils
 from moods_app import auth
-
 from moods_app.database import init_db
-
 
 
 def create_app(test_config=None):
@@ -51,9 +46,11 @@ def create_app(test_config=None):
         # authenticate user
         auth_error = auth.authenticate_user(
             user_id=user_id,
-            api_key=request.form["api_key"],
+            api_key=request.headers["x-api-key"],
             session=session,
         )
+        if auth_error is not None:
+            return auth_error[0], auth_error[1]  # message, code
 
         # construct mood capture object and persist to database
         mood_capture = MoodCapture.create_new_mood_capture(
@@ -80,17 +77,21 @@ def create_app(test_config=None):
             return message, code
         user_id = int(request.args["user_id"])
 
+        # authenticate
+        auth_error = auth.authenticate_user(
+            user_id=user_id,
+            api_key=request.headers["x-api-key"],
+            session=session,
+        )
+        if auth_error is not None:
+            return auth_error[0], auth_error[1]  # message, code
+
         # retreive all stored moods for this user
         moods = MoodCapture.get_all_moods_for_user(user_id=user_id, session=session)
         if not moods:
             return "No mood captures found for this user", 404
 
-        # calculate and return distribution
-        distribution = {key.name: 0 for key in Mood}
-        for mood in moods:
-            distribution[mood.name] += 1
-
-        return distribution, 200
+        return utils.calculate_mood_distribution(moods), 200
 
 
     @app.route("/mood-captures/nearest-happy")
@@ -116,7 +117,6 @@ def create_app(test_config=None):
         return {"latitude": nearest[0], "longitude": nearest[1]}, 200
 
     return app
-
 
 
 def validate_input(args: dict):

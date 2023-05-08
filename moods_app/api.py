@@ -7,6 +7,7 @@ from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app.resources.user import User
 from moods_app.resources.base import Base
 from moods_app import utils
+from moods_app import auth
 
 from moods_app.database import init_db
 
@@ -48,7 +49,7 @@ def create_app(test_config=None):
         user_id = int(request.form["user_id"])
         
         # authenticate user
-        auth_error = authenticate_user(
+        auth_error = auth.authenticate_user(
             user_id=user_id,
             api_key=request.form["api_key"],
             session=session,
@@ -116,17 +117,6 @@ def create_app(test_config=None):
 
     return app
 
-
-def authenticate_user(user_id: int, api_key: str, session: Session):
-    """Check the user exists and the api key is correct.
-    Returns None on success, (message, code) tuple on failure."""
-    user = User.get_user_by_id(user_id=user_id, session=session)
-    if user is None:
-        return f"User {user_id} does not exist.", 404
-    elif user.api_key != api_key:
-        return f"Invalid api key for user {user_id}.", 401
-    else:
-        return None
 
 
 def validate_input(args: dict):

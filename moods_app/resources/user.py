@@ -15,3 +15,8 @@ class User(Base):
         session.add(user)
         session.commit()
         return user
+
+    @classmethod
+    def get_user_by_id(cls, user_id: int, session: Session):
+        """returns specified user.  If not found, returns None."""
+        return session.query(User).where(User.id == user_id).scalar()

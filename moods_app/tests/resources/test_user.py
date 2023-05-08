@@ -1,27 +1,38 @@
+import pytest
 from moods_app.resources.base import Base
 from moods_app.resources.user import User
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-class TestUser:
-    def setup_class(self):
-        engine = create_engine("sqlite://")
-        Base.metadata.create_all(engine)
-        self.session = Session(engine)
 
-    def teardown_class(self):
-        self.session.rollback()
-        self.session.close()
+@pytest.fixture()
+def session(engine):
+    with Session(engine) as session:
+        yield session
 
-    def test_create_user(self):
-        """make sure it creates a non-empty api key, and make sure it persists the user into the db"""
-        user = User.create_new_user(session=self.session)
+def test_create_user(session):
+    """make sure it creates a non-empty api key, and make sure it persists the user into the db"""
+    user = User.create_new_user(session=session)
+    assert user.id == 1
 
-        assert isinstance(user.api_key, str)
-        assert len(user.api_key)
+    assert isinstance(user.api_key, str)
+    assert len(user.api_key)
 
-        in_db = self.session.query(User).filter(User.id==user.id).all()
-        assert len(in_db) == 1
-        assert in_db[0].id == user.id
-        assert in_db[0].api_key == user.api_key
+    in_db = session.query(User).filter(User.id==user.id).all()
+    assert len(in_db) == 1
+    assert in_db[0].id == user.id
+    assert in_db[0].api_key == user.api_key
+
+def test_get_user_by_id(session):
+    user = User(api_key="123")
+    session.add(user)
+    session.commit()
+    assert user.id == 1
+
+    result = User.get_user_by_id(user_id=1, session=session)
+    assert result is not None
+    assert result.id == user.id
+    
+def test_get_user_by_id_not_found(session):
+    result = User.get_user_by_id(user_id=123, session=session)
+    assert result is None

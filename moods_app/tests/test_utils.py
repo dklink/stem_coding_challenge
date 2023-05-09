@@ -6,14 +6,19 @@ def test_nearest_neigbor_no_locations():
     result = nearest_neighbor_latlon((0, 0), [])
     assert result is None
 
-
 def test_nearest_neighbor():
-    target = (10, 10)
     locations = [(45, 37), (-90, 0), (11, 11)]
+    target1 = (10, 10)
+    target2 = (46, 38)
+    target3 = (-85, 5)
 
-    result = nearest_neighbor_latlon(target, locations)
+    result1 = nearest_neighbor_latlon(target1, locations)
+    result2 = nearest_neighbor_latlon(target2, locations)
+    result3 = nearest_neighbor_latlon(target3, locations)
 
-    assert result == (11, 11)
+    assert result1 == (11, 11)
+    assert result2 == (45, 37)
+    assert result3 == (-90, 0)
 
 
 def test_mood_distribution_empty():

@@ -16,6 +16,7 @@ def nearest_neighbor_latlon(target: Tuple[float, float], locations: List[Tuple[f
         distance = haversine(target, location)
         if distance < nearest_distance:
             nearest = location
+            nearest_distance = distance
     
     return nearest
 

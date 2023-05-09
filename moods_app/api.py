@@ -39,7 +39,7 @@ def create_app(test_config=None):
     @app.post("/mood-captures")
     def add_mood_capture():
         # validate args
-        input_error = validate_input(request.form)
+        input_error = validate_input(request.form, expected_args={"user_id", "latitude", "longitude", "mood"})
         if input_error is not None:
             return input_error  # message, code
         user_id = int(request.form["user_id"])
@@ -73,7 +73,7 @@ def create_app(test_config=None):
 
     @app.get("/mood-captures/frequency-distribution")
     def get_mood_distribution():
-        input_error = validate_input(request.args)
+        input_error = validate_input(request.args, expected_args={"user_id"})
         if input_error is not None:
             return input_error  # message, code
         user_id = int(request.args["user_id"])
@@ -97,7 +97,7 @@ def create_app(test_config=None):
 
     @app.route("/mood-captures/nearest-happy")
     def get_nearest_happy_location():
-        input_error = validate_input(request.args)
+        input_error = validate_input(request.args, expected_args={"user_id", "latitude", "longitude"})
         if input_error is not None:
             return input_error  # message, code
         user_id = int(request.args["user_id"])

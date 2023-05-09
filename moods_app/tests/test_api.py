@@ -65,6 +65,18 @@ def test_add_two_users_unique(client):
 
 """POST /mood-captures"""
 
+def test_add_mood_capture_missing_arg(client):
+    """ensure the endpoint is checking for missing args"""
+    response = client.post("/mood-captures", data={
+        "latitude": "this should be a float",
+        "longitude": 124.2,
+        "mood": "happy",
+    },
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 400
+    assert response.text == "Missing mandatory parameter: 'user_id'"
+
 def test_add_mood_capture_improper_input(client):
     """ensure the endpoint is checking the input"""
     response = client.post("/mood-captures", data={
@@ -145,6 +157,15 @@ def test_add_mood_capture_persist(client, one_user_session):
 
 """GET /mood-captures/frequency-distribution"""
 
+def test_get_mood_distribution_missing_arg(client):
+    """ensure the endpoint is checking for missing args"""
+    response = client.get(
+        "/mood-captures/frequency-distribution",
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 400
+    assert response.text == "Missing mandatory parameter: 'user_id'"
+
 def test_get_mood_distribution_improper_input(client):
     """ensure the endpoint is checking the input"""
     response = client.get(
@@ -205,6 +226,15 @@ def test_get_mood_distribution(client, two_user_session):
 
 
 """GET /mood_captures/nearest-happy"""
+
+def test_get_nearest_happy_location_missing_arg(client):
+    """ensure the endpoint is checking for missing args"""
+    response = client.get(
+        "/mood-captures/nearest-happy?user_id=1&latitude=0",
+        headers={"x-api-key": "123"},
+    )
+    assert response._status_code == 400
+    assert response.text == "Missing mandatory parameter: 'longitude'"
 
 def test_get_nearest_happy_location_improper_input(client):
     """ensure the endpoint is checking the input"""

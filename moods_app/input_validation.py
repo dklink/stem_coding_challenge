@@ -1,13 +1,18 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Set
 from moods_app.resources.mood_capture import Mood
 
 
-def validate_input(args: dict) -> Optional[Tuple[str, int]]:
+def validate_input(args: dict, expected_args: Set[str]) -> Optional[Tuple[str, int]]:
     """validates any of user_id, mood, latitude, and longitude that exist in args.
-    args is guaranteed to only hold string values.
+    Also takes a set of expected args, and ensures they are in 'args'.
+    args keys/values are guaranteed to be strings.
     returns message and error code upon the first problem.
     if no problems, returns None.
     """
+    for arg in expected_args:
+        if arg not in args:
+            return f"Missing mandatory parameter: '{arg}'", 400
+
     if "user_id" in args and not args["user_id"].isnumeric():
         return "'user_id' must be an integer", 400
     if "mood" in args:

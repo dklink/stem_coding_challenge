@@ -6,6 +6,7 @@ from moods_app.resources.base import Base
 from moods_app import utils
 from moods_app import auth
 from moods_app.database import init_db
+from moods_app.input_validation import validate_input
 
 
 def create_app(test_config=None):
@@ -38,9 +39,9 @@ def create_app(test_config=None):
     @app.post("/mood-captures")
     def add_mood_capture():
         # validate args
-        message, code = validate_input(request.form)
-        if code is not None:
-            return message, code
+        input_error = validate_input(request.form)
+        if input_error is not None:
+            return input_error  # message, code
         user_id = int(request.form["user_id"])
         
         # authenticate user
@@ -50,7 +51,7 @@ def create_app(test_config=None):
             session=session,
         )
         if auth_error is not None:
-            return auth_error[0], auth_error[1]  # message, code
+            return auth_error  # message, code
 
         # construct mood capture object and persist to database
         mood_capture = MoodCapture.create_new_mood_capture(
@@ -72,9 +73,9 @@ def create_app(test_config=None):
 
     @app.get("/mood-captures/frequency-distribution")
     def get_mood_distribution():
-        message, code = validate_input(request.args)
-        if code is not None:
-            return message, code
+        input_error = validate_input(request.args)
+        if input_error is not None:
+            return input_error  # message, code
         user_id = int(request.args["user_id"])
 
         # authenticate
@@ -96,9 +97,9 @@ def create_app(test_config=None):
 
     @app.route("/mood-captures/nearest-happy")
     def get_nearest_happy_location():
-        message, code = validate_input(request.args)
-        if code is not None:
-            return message, code
+        input_error = validate_input(request.args)
+        if input_error is not None:
+            return input_error  # message, code
         user_id = int(request.args["user_id"])
         longitude = float(request.args["longitude"])
         latitude = float(request.args["latitude"])
@@ -126,35 +127,3 @@ def create_app(test_config=None):
         return {"latitude": nearest[0], "longitude": nearest[1]}, 200
 
     return app
-
-
-def validate_input(args: dict):
-    """validates any of user_id, mood, latitude, and longitude that exist in args.
-    returns message and error code upon the first problem
-    if no problems, returns (None, None) tuple
-    """
-    if "user_id" in args and not args["user_id"].isnumeric():
-        return "'user_id' must be an integer", 400
-    if "mood" in args:
-        try:
-            Mood[args["mood"].lower()]
-        except ValueError:
-            return "Provided mood is not supported", 400
-    if "latitude" in args:
-        try:
-            latitude = float(args["latitude"])
-        except ValueError:
-            return "'latitude' must be numeric", 400
-        if not (-90 <= latitude <= 90):
-            return "'latitude' must be in range [-90, 90]", 400
-    if "longitude" in args:
-        try:
-            longitude = float(args["longitude"])
-        except ValueError:
-            return "'longitude' must be numeric", 400
-        if not (-180 <= longitude <= 180):
-            return "'longitude' must be in range [-180, 180]", 400
-    if "api_key" in args and not isinstance(args["api_key"], str):
-        return "'api_key' must be a string", 400
-
-    return None, None

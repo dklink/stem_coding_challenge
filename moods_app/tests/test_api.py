@@ -171,7 +171,6 @@ def test_get_mood_distribution_auth_error(client, one_user_session):
     assert response._status_code == 401
     assert response.text == "Invalid api key for user 1."
 
-
 def test_get_mood_distribution_no_captures(client, one_user_session):
     response = client.get(
         "/mood-captures/frequency-distribution?user_id=1",
@@ -207,7 +206,7 @@ def test_get_mood_distribution(client, two_user_session):
 
 """GET /mood_captures/nearest-happy"""
 
-def test_get_mood_distribution_improper_input(client):
+def test_get_nearest_happy_location_improper_input(client):
     """ensure the endpoint is checking the input"""
     response = client.get(
         "/mood-captures/nearest-happy?user_id=text&latitude=0&longitude=0",
@@ -263,6 +262,7 @@ def test_get_nearest_happy_location(client, two_user_session):
         "/mood-captures/nearest-happy?user_id=1&latitude=0&longitude=0",
         headers={"x-api-key": "123"},
     )
+    
     assert response._status_code == 200
     assert response.json == {
         "latitude": 0,

@@ -77,17 +77,17 @@ if __name__ == "__main__":
     target_lat=20
     target_lon=0
     print(f"Finally, let's find the user's nearest location to {target_lat} latitude, {target_lon} longitude.")
-    print("We'll use GET /mood-captures/nearest-happy to do this.")
+    print("We'll use GET /mood-captures/nearest-happy-location to do this.")
     print("Hint: the answer should be (16.2, 0.1).")
     r7 = requests.get(
-        base_url + f"/mood-captures/nearest-happy?user_id={user1['user_id']}",
+        base_url + f"/mood-captures/nearest-happy-location?user_id={user1['user_id']}",
         headers={"x-api-key": user1["api_key"]},
     )
     assert r7.status_code == 400
     print(f"\tStatus code: {r7.status_code}; Response: {r7.text}")
     print("Oops, we forgot to include the target location!  Let's try again.")
     r8 = requests.get(
-        base_url + f"/mood-captures/nearest-happy?user_id={user1['user_id']}&latitude={target_lat}&longitude={target_lon}",
+        base_url + f"/mood-captures/nearest-happy-location?user_id={user1['user_id']}&latitude={target_lat}&longitude={target_lon}",
         headers={"x-api-key": user1["api_key"]},
     )
     print(f"\tStatus code: {r8.status_code}; Response: {r8.json()}")

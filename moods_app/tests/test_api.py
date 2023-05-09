@@ -244,12 +244,12 @@ def test_get_mood_distribution(client, two_user_session):
     }
 
 
-"""GET /mood_captures/nearest-happy"""
+"""GET /mood_captures/nearest-happy-location"""
 
 def test_get_nearest_happy_location_missing_arg(client):
     """ensure the endpoint is checking for missing args"""
     response = client.get(
-        "/mood-captures/nearest-happy?user_id=1&latitude=0",
+        "/mood-captures/nearest-happy-location?user_id=1&latitude=0",
         headers={"x-api-key": "123"},
     )
     assert response._status_code == 400
@@ -258,7 +258,7 @@ def test_get_nearest_happy_location_missing_arg(client):
 def test_get_nearest_happy_location_missing_api_key(client):
     """ensure the endpoint properly handles no api key passed in"""
     response = client.get(
-        "/mood-captures/nearest-happy?user_id=1&latitude=0&longitude=0",
+        "/mood-captures/nearest-happy-location?user_id=1&latitude=0&longitude=0",
     )
     assert response._status_code == 401
     assert response.text == "Missing authentication header: 'x-api-key'"
@@ -266,7 +266,7 @@ def test_get_nearest_happy_location_missing_api_key(client):
 def test_get_nearest_happy_location_improper_input(client):
     """ensure the endpoint is checking the input"""
     response = client.get(
-        "/mood-captures/nearest-happy?user_id=text&latitude=0&longitude=0",
+        "/mood-captures/nearest-happy-location?user_id=text&latitude=0&longitude=0",
         headers={"x-api-key": "123"},
     )
 
@@ -276,14 +276,14 @@ def test_get_nearest_happy_location_improper_input(client):
 def test_get_nearest_happy_location_bad_auth(client, one_user_session):
     """ensure auth is being checked"""
     response = client.get(
-        "/mood-captures/nearest-happy?user_id=2&latitude=0&longitude=0",
+        "/mood-captures/nearest-happy-location?user_id=2&latitude=0&longitude=0",
         headers={"x-api-key": "123"},
     )
     assert response._status_code == 404
     assert response.text == "User 2 does not exist."
 
     response = client.get(
-        "/mood-captures/nearest-happy?user_id=1&latitude=0&longitude=0",
+        "/mood-captures/nearest-happy-location?user_id=1&latitude=0&longitude=0",
         headers={"x-api-key": "incorrect"},
     )
     assert response._status_code == 401
@@ -296,7 +296,7 @@ def test_get_nearest_happy_location_no_happy_captures(client, one_user_session):
     one_user_session.commit()
 
     response = client.get(
-        "/mood-captures/nearest-happy?user_id=1&latitude=0&longitude=0",
+        "/mood-captures/nearest-happy-location?user_id=1&latitude=0&longitude=0",
         headers={"x-api-key": "123"},
     )
     assert response._status_code == 404
@@ -316,7 +316,7 @@ def test_get_nearest_happy_location(client, two_user_session):
     two_user_session.commit()
 
     response = client.get(
-        "/mood-captures/nearest-happy?user_id=1&latitude=0&longitude=0",
+        "/mood-captures/nearest-happy-location?user_id=1&latitude=0&longitude=0",
         headers={"x-api-key": "123"},
     )
     

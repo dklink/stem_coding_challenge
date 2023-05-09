@@ -95,7 +95,7 @@ def create_app(test_config=None):
         return utils.calculate_mood_distribution(moods), 200
 
 
-    @app.route("/mood-captures/nearest-happy")
+    @app.route("/mood-captures/nearest-happy-location")
     def get_nearest_happy_location():
         input_error = validate_input(request.args, expected_args={"user_id", "latitude", "longitude"})
         if input_error is not None:

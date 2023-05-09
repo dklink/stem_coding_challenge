@@ -156,11 +156,17 @@ Each endpoint only reads/writes data for one user.  As such, I chose the simples
     - `tests`: directory containing all unit tests.  Sub-structure mirrors `moods_app`.
 
 # Installation
-In a clean environment, run `pip install -r requirements.txt`.  That's it!
+In a clean environment, install `python 3.11` and `pip`, then run `pip install -r requirements.txt`.  That's it!
 
 # Usage/Demo
-From the project root, launch the api using `flask --app moods_app/api run`.  Then, run `python demo.py` to see the api respond to requests!  Or, make your own requests to the exposed endpoints.  By default flask exposes them at `127.0.0.1:5000`.
+From the project root, launch the api using `flask --app moods_app/api run`.  Then, run `python demo.py` to see the api respond to requests!  Or, make your own requests to the exposed endpoints.  The flask server will tell you where it's running upon launch (default is `127.0.0.1:5000`).
 
 # Tests
-Unit tests are located in `moods_app/tests.`
-To execute the test suite, simply run `pytest` in the project root directory.
+Unit tests are located in `moods_app/tests.` To execute the test suite, simply run `pytest` in the project root directory.  I went to lengths to ensure the testing is not just thorough, but also efficient, with a single self-cleaning database connection used across all tests; the details of that can be found in `moods_app/tests/confest.py`.
+
+# Conclusion
+Thank you for reading this whole thing!  I look forward to reviewing the project with you, talking through my design decisions, and learning where things could be improved.
+
+All the best,
+
+Doug Klink

@@ -21,6 +21,7 @@ def nearest_neighbor_latlon(
 
     return nearest
 
+
 def calculate_mood_distribution(moods: List[Mood]) -> Dict[str, int]:
     """For a list of moods, returns a dict with a counter of how many moods are in the list.
     Keys are strings from enum .name property"""

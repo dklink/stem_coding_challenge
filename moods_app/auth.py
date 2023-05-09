@@ -13,6 +13,7 @@ def authenticate_user(user_id: int, headers: dict, session: Session):
             session=session,
         )
 
+
 def authenticate_user_api_key(user_id: int, api_key: str, session: Session):
     """Check the user exists and the api key is correct.
     Returns None on success, (message, code) tuple on failure."""

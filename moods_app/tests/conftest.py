@@ -12,6 +12,7 @@ from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app.resources.user import User
 from moods_app.resources.base import Base
 
+
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
@@ -27,6 +28,7 @@ def engine():
     yield engine
     Base.metadata.drop_all(engine)
 
+
 @pytest.fixture(scope="function")
 def session(engine):
     """creates a session to connect to the db, but wraps it in a transaction
@@ -34,9 +36,9 @@ def session(engine):
     even if we've made commits on the session."""
     connection = engine.connect()
     transaction = connection.begin()
-    session = scoped_session(sessionmaker(autocommit=False,
-                                          autoflush=False,
-                                          bind=connection))
+    session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=connection)
+    )
     yield session
     session.close()
 

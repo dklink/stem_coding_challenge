@@ -10,10 +10,11 @@ def test_create_user(session):
     assert isinstance(user.api_key, str)
     assert len(user.api_key)
 
-    in_db = session.query(User).filter(User.id==user.id).all()
+    in_db = session.query(User).filter(User.id == user.id).all()
     assert len(in_db) == 1
     assert in_db[0].id == user.id
     assert in_db[0].api_key == user.api_key
+
 
 def test_get_user_by_id(session):
     user = User(api_key="123")
@@ -24,7 +25,8 @@ def test_get_user_by_id(session):
     result = User.get_user_by_id(user_id=1, session=session)
     assert result is not None
     assert result.id == user.id
-    
+
+
 def test_get_user_by_id_not_found(session):
     result = User.get_user_by_id(user_id=123, session=session)
     assert result is None

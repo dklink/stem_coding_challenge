@@ -25,7 +25,7 @@ def create_app(test_config=None):
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         session.remove()
-    
+
     ### ENDPOINTS ###
     @app.post("/users")
     def add_user():
@@ -39,11 +39,13 @@ def create_app(test_config=None):
     @app.post("/mood-captures")
     def add_mood_capture():
         # validate args
-        input_error = validate_input(request.form, expected_args={"user_id", "latitude", "longitude", "mood"})
+        input_error = validate_input(
+            request.form, expected_args={"user_id", "latitude", "longitude", "mood"}
+        )
         if input_error is not None:
             return input_error  # message, code
         user_id = int(request.form["user_id"])
-        
+
         # authenticate user
         auth_error = auth.authenticate_user(
             user_id=user_id,
@@ -61,7 +63,7 @@ def create_app(test_config=None):
             mood=Mood[request.form["mood"].lower()],
             session=session,
         )
-    
+
         return {
             "mood_capture_id": mood_capture.id,
             "user_id": mood_capture.user_id,
@@ -69,7 +71,6 @@ def create_app(test_config=None):
             "longitude": mood_capture.longitude,
             "mood": mood_capture.mood.name,
         }, 201
-
 
     @app.get("/mood-captures/frequency-distribution")
     def get_mood_distribution():
@@ -94,10 +95,11 @@ def create_app(test_config=None):
 
         return utils.calculate_mood_distribution(moods), 200
 
-
     @app.route("/mood-captures/nearest-happy-location")
     def get_nearest_happy_location():
-        input_error = validate_input(request.args, expected_args={"user_id", "latitude", "longitude"})
+        input_error = validate_input(
+            request.args, expected_args={"user_id", "latitude", "longitude"}
+        )
         if input_error is not None:
             return input_error  # message, code
         user_id = int(request.args["user_id"])
@@ -114,7 +116,9 @@ def create_app(test_config=None):
             return auth_error[0], auth_error[1]  # message, code
 
         # retreive all happy mood captures for this user
-        happy_locations = MoodCapture.get_locations_of_happy_moods_for_user(user_id=user_id, session=session)
+        happy_locations = MoodCapture.get_locations_of_happy_moods_for_user(
+            user_id=user_id, session=session
+        )
         if not happy_locations:
             return "No happy mood captures found for this user", 404
 

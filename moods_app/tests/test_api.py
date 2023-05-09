@@ -13,6 +13,7 @@ def client(session):
     with app.test_client() as client:
         yield client
 
+
 @pytest.fixture
 def one_user_session(session):
     user = User(api_key="123")
@@ -20,6 +21,7 @@ def one_user_session(session):
     session.commit()
     assert user.id == 1
     yield session
+
 
 @pytest.fixture
 def two_user_session(session):
@@ -34,6 +36,7 @@ def two_user_session(session):
 
 """POST /users"""
 
+
 def test_add_user_response(client):
     """test adding a user provides expected response"""
     response = client.post("/users").json
@@ -42,6 +45,7 @@ def test_add_user_response(client):
     assert isinstance(response["user_id"], int)
     assert isinstance(response["api_key"], str)
     assert len(response["api_key"]) > 0  # not an empty string
+
 
 def test_add_user_persist(client, session):
     """test that calling the add user endpoint actually adds a user to the db"""
@@ -54,6 +58,7 @@ def test_add_user_persist(client, session):
     assert len(result) == 1
     assert result[0].id == response["user_id"]
 
+
 def test_add_two_users_unique(client):
     """test two users get created with unique IDs and api keys"""
     response1 = client.post("/users")
@@ -65,79 +70,98 @@ def test_add_two_users_unique(client):
 
 """POST /mood-captures"""
 
+
 def test_add_mood_capture_missing_arg(client):
     """ensure the endpoint is checking for missing args"""
-    response = client.post("/mood-captures", data={
-        "latitude": 80,
-        "longitude": 124.2,
-        "mood": "happy",
-    },
+    response = client.post(
+        "/mood-captures",
+        data={
+            "latitude": 80,
+            "longitude": 124.2,
+            "mood": "happy",
+        },
         headers={"x-api-key": "123"},
     )
     assert response._status_code == 400
     assert response.text == "Missing mandatory parameter: 'user_id'"
 
+
 def test_add_mood_capture_missing_api_key(client):
     """ensure the endpoint properly handles no api key passed in"""
-    response = client.post("/mood-captures", data={
-        "user_id": 1,
-        "latitude": 80,
-        "longitude": 124.2,
-        "mood": "happy",
-    })
+    response = client.post(
+        "/mood-captures",
+        data={
+            "user_id": 1,
+            "latitude": 80,
+            "longitude": 124.2,
+            "mood": "happy",
+        },
+    )
     assert response._status_code == 401
     assert response.text == "Missing authentication header: 'x-api-key'"
 
+
 def test_add_mood_capture_improper_input(client):
     """ensure the endpoint is checking the input"""
-    response = client.post("/mood-captures", data={
-        "user_id": "this should be an integer",
-        "latitude": "this should be a float",
-        "longitude": 124.2,
-        "mood": "happy",
-    },
+    response = client.post(
+        "/mood-captures",
+        data={
+            "user_id": "this should be an integer",
+            "latitude": "this should be a float",
+            "longitude": 124.2,
+            "mood": "happy",
+        },
         headers={"x-api-key": "123"},
     )
     assert response._status_code == 400
     assert response.text == "'user_id' must be an integer"
 
+
 def test_add_mood_capture_no_such_user(client):
     """test that adding a new mood capture provides the expected response"""
-    response = client.post("/mood-captures", data={
-        "user_id": 1,
-        "latitude": 0.01,
-        "longitude": 124.2,
-        "mood": "happy",
-    },
+    response = client.post(
+        "/mood-captures",
+        data={
+            "user_id": 1,
+            "latitude": 0.01,
+            "longitude": 124.2,
+            "mood": "happy",
+        },
         headers={"x-api-key": "123"},
     )
     assert response._status_code == 404
     assert response.text == "User 1 does not exist."
 
+
 def test_add_mood_capture_incorrect_api_key(client, one_user_session):
     """test that adding a new mood capture provides the expected response"""
-    response = client.post("/mood-captures", data={
-        "user_id": 1,
-        "latitude": 0.01,
-        "longitude": 124.2,
-        "mood": "happy",
-    },
+    response = client.post(
+        "/mood-captures",
+        data={
+            "user_id": 1,
+            "latitude": 0.01,
+            "longitude": 124.2,
+            "mood": "happy",
+        },
         headers={"x-api-key": "incorrect"},
     )
     assert response._status_code == 401
     assert response.text == "Invalid api key for user 1."
 
+
 def test_add_mood_capture_response(client, one_user_session):
     """test that adding a new mood capture provides the expected response"""
-    response = client.post("/mood-captures", data={
-        "user_id": 1,
-        "latitude": 0.01,
-        "longitude": 124.2,
-        "mood": "happy",
-    },
+    response = client.post(
+        "/mood-captures",
+        data={
+            "user_id": 1,
+            "latitude": 0.01,
+            "longitude": 124.2,
+            "mood": "happy",
+        },
         headers={"x-api-key": "123"},
     )
-    
+
     assert response._status_code == 201
     response = response.json
     assert isinstance(response["mood_capture_id"], int)
@@ -146,17 +170,20 @@ def test_add_mood_capture_response(client, one_user_session):
     assert response["longitude"] == 124.2
     assert response["mood"] == "happy"
 
+
 def test_add_mood_capture_persist(client, one_user_session):
     """test that calling the add mood capture endpoint adds the entity to the db"""
     result = one_user_session.query(MoodCapture).all()
     assert len(result) == 0
 
-    response = client.post("/mood-captures", data={
-        "user_id": 1,
-        "latitude": 0.01,
-        "longitude": 124.2,
-        "mood": "happy",
-    },
+    response = client.post(
+        "/mood-captures",
+        data={
+            "user_id": 1,
+            "latitude": 0.01,
+            "longitude": 124.2,
+            "mood": "happy",
+        },
         headers={"x-api-key": "123"},
     )
     assert response._status_code == 201
@@ -168,6 +195,7 @@ def test_add_mood_capture_persist(client, one_user_session):
 
 """GET /mood-captures/frequency-distribution"""
 
+
 def test_get_mood_distribution_missing_arg(client):
     """ensure the endpoint is checking for missing args"""
     response = client.get(
@@ -177,6 +205,7 @@ def test_get_mood_distribution_missing_arg(client):
     assert response._status_code == 400
     assert response.text == "Missing mandatory parameter: 'user_id'"
 
+
 def test_get_mood_distribution_missing_api_key(client):
     """ensure the endpoint properly handles no api key passed in"""
     response = client.get(
@@ -184,6 +213,7 @@ def test_get_mood_distribution_missing_api_key(client):
     )
     assert response._status_code == 401
     assert response.text == "Missing authentication header: 'x-api-key'"
+
 
 def test_get_mood_distribution_improper_input(client):
     """ensure the endpoint is checking the input"""
@@ -193,6 +223,7 @@ def test_get_mood_distribution_improper_input(client):
     )
     assert response._status_code == 400
     assert response.text == "'user_id' must be an integer"
+
 
 def test_get_mood_distribution_auth_error(client, one_user_session):
     """ensure the endpoint is doing authentication"""
@@ -211,6 +242,7 @@ def test_get_mood_distribution_auth_error(client, one_user_session):
     assert response._status_code == 401
     assert response.text == "Invalid api key for user 1."
 
+
 def test_get_mood_distribution_no_captures(client, one_user_session):
     response = client.get(
         "/mood-captures/frequency-distribution?user_id=1",
@@ -219,6 +251,7 @@ def test_get_mood_distribution_no_captures(client, one_user_session):
 
     assert response._status_code == 404
     assert response.text == "No mood captures found for this user"
+
 
 def test_get_mood_distribution(client, two_user_session):
     captures = [
@@ -246,6 +279,7 @@ def test_get_mood_distribution(client, two_user_session):
 
 """GET /mood_captures/nearest-happy-location"""
 
+
 def test_get_nearest_happy_location_missing_arg(client):
     """ensure the endpoint is checking for missing args"""
     response = client.get(
@@ -255,6 +289,7 @@ def test_get_nearest_happy_location_missing_arg(client):
     assert response._status_code == 400
     assert response.text == "Missing mandatory parameter: 'longitude'"
 
+
 def test_get_nearest_happy_location_missing_api_key(client):
     """ensure the endpoint properly handles no api key passed in"""
     response = client.get(
@@ -262,6 +297,7 @@ def test_get_nearest_happy_location_missing_api_key(client):
     )
     assert response._status_code == 401
     assert response.text == "Missing authentication header: 'x-api-key'"
+
 
 def test_get_nearest_happy_location_improper_input(client):
     """ensure the endpoint is checking the input"""
@@ -272,6 +308,7 @@ def test_get_nearest_happy_location_improper_input(client):
 
     assert response._status_code == 400
     assert response.text == "'user_id' must be an integer"
+
 
 def test_get_nearest_happy_location_bad_auth(client, one_user_session):
     """ensure auth is being checked"""
@@ -289,6 +326,7 @@ def test_get_nearest_happy_location_bad_auth(client, one_user_session):
     assert response._status_code == 401
     assert response.text == "Invalid api key for user 1."
 
+
 def test_get_nearest_happy_location_no_happy_captures(client, one_user_session):
     """ensure proper response if no happy captures are found for the user"""
     capture = MoodCapture(user_id=1, latitude=0, longitude=0, mood=Mood.sad)
@@ -301,6 +339,7 @@ def test_get_nearest_happy_location_no_happy_captures(client, one_user_session):
     )
     assert response._status_code == 404
     assert response.text == "No happy mood captures found for this user"
+
 
 def test_get_nearest_happy_location(client, two_user_session):
     """test functionality in normal case"""
@@ -319,7 +358,7 @@ def test_get_nearest_happy_location(client, two_user_session):
         "/mood-captures/nearest-happy-location?user_id=1&latitude=0&longitude=0",
         headers={"x-api-key": "123"},
     )
-    
+
     assert response._status_code == 200
     assert response.json == {
         "latitude": 0,

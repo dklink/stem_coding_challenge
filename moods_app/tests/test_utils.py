@@ -2,9 +2,11 @@ from moods_app.utils import nearest_neighbor_latlon, calculate_mood_distribution
 from moods_app.resources.mood_capture import Mood
 import random
 
+
 def test_nearest_neigbor_no_locations():
     result = nearest_neighbor_latlon((0, 0), [])
     assert result is None
+
 
 def test_nearest_neighbor():
     locations = [(45, 37), (-90, 0), (11, 11)]
@@ -20,14 +22,16 @@ def test_nearest_neighbor():
     assert result2 == (45, 37)
     assert result3 == (-90, 0)
 
+
 def test_nearest_neighbor_equidistant():
     """make sure in an equidistant case, it returns one of them arbitrarily, and doesn't explode"""
     locations = [(-10, -10), (10, 10), (90, 120)]
     target = (0, 0)
-    
+
     result = nearest_neighbor_latlon(target, locations)
 
     assert result in [(-10, -10), (10, 10)]
+
 
 def test_mood_distribution_empty():
     assert calculate_mood_distribution([]) == {
@@ -35,6 +39,7 @@ def test_mood_distribution_empty():
         "sad": 0,
         "neutral": 0,
     }
+
 
 def test_mood_distribution():
     moods = [Mood.happy] * 10 + [Mood.sad] * 2 + [Mood.neutral] * 55

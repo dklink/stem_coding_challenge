@@ -36,13 +36,14 @@ def test_create_new_mood_capture(session):
         session=session,
     )
 
-    in_db = session.query(MoodCapture).filter(MoodCapture.id==capture.id).all()
+    in_db = session.query(MoodCapture).filter(MoodCapture.id == capture.id).all()
     assert len(in_db) == 1
     assert in_db[0].id == 1
     assert in_db[0].user_id == 1
     assert in_db[0].latitude == 24.1
     assert in_db[0].longitude == -20.5
     assert in_db[0].mood == Mood.happy
+
 
 def test_create_new_mood_capture_no_user(session):
     with pytest.raises(IntegrityError):
@@ -54,6 +55,7 @@ def test_create_new_mood_capture_no_user(session):
             session=session,
         )
 
+
 def test_get_all_moods_for_user(session, dummy_captures):
     session.add_all(dummy_captures)
     session.commit()
@@ -61,12 +63,19 @@ def test_get_all_moods_for_user(session, dummy_captures):
     results = MoodCapture.get_all_moods_for_user(user_id=2, session=session)
 
     # make sure we get what we expect!
-    assert sorted(results, key=lambda mood: mood.name) == [Mood.happy, Mood.happy, Mood.neutral]
+    assert sorted(results, key=lambda mood: mood.name) == [
+        Mood.happy,
+        Mood.happy,
+        Mood.neutral,
+    ]
+
 
 def test_get_locations_of_happy_moods_for_user(session, dummy_captures):
     session.add_all(dummy_captures)
     session.commit()
 
-    results = MoodCapture.get_locations_of_happy_moods_for_user(user_id=2, session=session)
-   
+    results = MoodCapture.get_locations_of_happy_moods_for_user(
+        user_id=2, session=session
+    )
+
     assert sorted(results) == sorted([(23.2, -100), (23.3, -101)])

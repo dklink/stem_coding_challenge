@@ -3,8 +3,9 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
 from moods_app.resources.base import Base
 
+
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     api_key = Column(String, nullable=False)
 

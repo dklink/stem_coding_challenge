@@ -5,7 +5,7 @@ from moods_app.resources.user import User
 from moods_app.resources.base import Base
 from moods_app import utils
 from moods_app import auth
-from moods_app.database import init_db
+from moods_app.database import get_filesystem_db_engine, init_db, get_scoped_session
 from moods_app.input_validation import validate_input
 
 
@@ -18,9 +18,9 @@ def create_app(test_config=None):
     if app.config["TESTING"]:
         session = app.config["TEST_DB_SESSION"]
     else:
-        init_db()
-        from database import db_session
-        session = db_session
+        engine = get_filesystem_db_engine()
+        init_db(engine)
+        session = get_scoped_session(engine)
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

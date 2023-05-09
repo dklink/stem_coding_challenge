@@ -103,6 +103,15 @@ def create_app(test_config=None):
         longitude = float(request.args["longitude"])
         latitude = float(request.args["latitude"])
 
+        # authenticate
+        auth_error = auth.authenticate_user(
+            user_id=user_id,
+            api_key=request.headers["x-api-key"],
+            session=session,
+        )
+        if auth_error is not None:
+            return auth_error[0], auth_error[1]  # message, code
+
         # retreive all happy mood captures for this user
         happy_locations = MoodCapture.get_locations_of_happy_moods_for_user(user_id=user_id, session=session)
         if not happy_locations:

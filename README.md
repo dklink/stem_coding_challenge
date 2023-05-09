@@ -14,7 +14,7 @@ Stores a new mood capture for a given user and location. Required body parameter
 | `mood` | `string` | User's mood, must be one of {happy, sad, neutral}, case insensitive |
 
 ### Authentication
-The request must contain an Authorization header containing the user's API key, in format `X-API-Key: <api_key>`
+The request must contain an Authorization header containing the user's API key, in format `x-api-key: <api_key>`
 
 ### Success Response
 HTTP Status 201, and a response with the following parameters:
@@ -102,25 +102,27 @@ This resource represents the capture of a user's mood at a particular location.
 
 Note: in any real application, we would want a `User` resource and a database table to back it.  It has been omitted here to keep implementation lightweight, as it isn't strictly necessary to implement the desired API endpoints.
 
-## Data Persistence
+# Data Persistence
 For data persistence, this application uses the `sqlalchemy` ORM with a on-disk `sqlite` database.  The database is stored at `moods_app/persistent_data/sqlite.db` and can be initialized using `moods_app/init_db.py`.
 
-## Authentication
-This app uses a minimal authentication scheme.  When a new user is created using `POST /users`, an API key is created for the user and returned.  All other endpoints require `user_id` and `api_key`, which are used in conjunction to authenticate the user.
+# Authentication
+This app uses a minimal authentication scheme.  When a new user is created using `POST /users`, an API key is created for the user and returned.  All other endpoints require `user_id` as a parameter, and an `api_key` in the authentication header.  They are used in conjunction to authenticate the user.
 
 Note that we store the API key unencrypted in our database, as encrypting them wouldn't accomplish anything.  If a third party gains access to our database without our knowledge, they could only use the API keys to read/write to our database, which they already have access to.  So, encrypting them would not prevent them from accessing any additional sensitive data.
 
-This is not the most sophisticated or secure method of authentication, but I think for this project, this scheme is a reasonable tradeoff of security vs complexity.
+There are obviously more sophisticated methods of authentication (OAuth, for example), but for this project I see this scheme as a reasonable tradeoff of security vs complexity.
 
-## Authorization
+# Authorization
 Each endpoint only reads/writes data for one user.  As such, I chose the simplest authorization scheme, which allows a user to read/write only their own data.  Since the same `user_id` is used for authentication and data access in all our endpoints, the authentication also implicitly serves as authorization.
 
-## Code Structure
+# Code Structure
 
-## Installation
+# Installation
 
-## Usage
+# Usage/Demo
+Launch the api using `flask --app api run`.  Then, run `python demo.py` to see the api respond to requests!
+
 
 ## Tests
-Tests for all python modules are located in `moods_app/tests.`
-To run the test suite, simply run `pytest` in the project root directory.
+Unit tests are located in `moods_app/tests.`
+To execute the test suite, simply run `pytest` in the project root directory.

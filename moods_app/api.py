@@ -47,7 +47,7 @@ def create_app(test_config=None):
         # authenticate user
         auth_error = auth.authenticate_user(
             user_id=user_id,
-            api_key=request.headers.get("x-api-key"),
+            headers=request.headers,
             session=session,
         )
         if auth_error is not None:
@@ -81,7 +81,7 @@ def create_app(test_config=None):
         # authenticate
         auth_error = auth.authenticate_user(
             user_id=user_id,
-            api_key=request.headers.get("x-api-key"),
+            headers=request.headers,
             session=session,
         )
         if auth_error is not None:
@@ -107,7 +107,7 @@ def create_app(test_config=None):
         # authenticate
         auth_error = auth.authenticate_user(
             user_id=user_id,
-            api_key=request.headers.get("x-api-key"),
+            headers=request.headers,
             session=session,
         )
         if auth_error is not None:

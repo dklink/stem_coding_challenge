@@ -85,8 +85,8 @@ def test_add_mood_capture_missing_api_key(client):
         "longitude": 124.2,
         "mood": "happy",
     })
-    assert response._status_code == 400
-    assert response.text == "Missing api key"
+    assert response._status_code == 401
+    assert response.text == "Missing authentication header: 'x-api-key'"
 
 def test_add_mood_capture_improper_input(client):
     """ensure the endpoint is checking the input"""
@@ -182,8 +182,8 @@ def test_get_mood_distribution_missing_api_key(client):
     response = client.get(
         "/mood-captures/frequency-distribution?user_id=1",
     )
-    assert response._status_code == 400
-    assert response.text == "Missing api key"
+    assert response._status_code == 401
+    assert response.text == "Missing authentication header: 'x-api-key'"
 
 def test_get_mood_distribution_improper_input(client):
     """ensure the endpoint is checking the input"""
@@ -260,8 +260,8 @@ def test_get_nearest_happy_location_missing_api_key(client):
     response = client.get(
         "/mood-captures/nearest-happy?user_id=1&latitude=0&longitude=0",
     )
-    assert response._status_code == 400
-    assert response.text == "Missing api key"
+    assert response._status_code == 401
+    assert response.text == "Missing authentication header: 'x-api-key'"
 
 def test_get_nearest_happy_location_improper_input(client):
     """ensure the endpoint is checking the input"""

@@ -14,6 +14,15 @@ def test_authentication_success(session):
     )
     assert auth_error is None
 
+def test_authentication_failure_no_api_key(session):
+    auth_error = authenticate_user(
+        user_id=1,
+        api_key=None,
+        session=session,
+    )
+    assert auth_error[1] == 400
+    assert auth_error[0] == "Missing api key"
+
 def test_authentication_failure_no_user(session):
     auth_error = authenticate_user(
         user_id=123,

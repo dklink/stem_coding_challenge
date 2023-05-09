@@ -68,7 +68,7 @@ def test_add_two_users_unique(client):
 def test_add_mood_capture_missing_arg(client):
     """ensure the endpoint is checking for missing args"""
     response = client.post("/mood-captures", data={
-        "latitude": "this should be a float",
+        "latitude": 80,
         "longitude": 124.2,
         "mood": "happy",
     },
@@ -76,6 +76,17 @@ def test_add_mood_capture_missing_arg(client):
     )
     assert response._status_code == 400
     assert response.text == "Missing mandatory parameter: 'user_id'"
+
+def test_add_mood_capture_missing_api_key(client):
+    """ensure the endpoint properly handles no api key passed in"""
+    response = client.post("/mood-captures", data={
+        "user_id": 1,
+        "latitude": 80,
+        "longitude": 124.2,
+        "mood": "happy",
+    })
+    assert response._status_code == 400
+    assert response.text == "Missing api key"
 
 def test_add_mood_capture_improper_input(client):
     """ensure the endpoint is checking the input"""
@@ -166,6 +177,14 @@ def test_get_mood_distribution_missing_arg(client):
     assert response._status_code == 400
     assert response.text == "Missing mandatory parameter: 'user_id'"
 
+def test_get_mood_distribution_missing_api_key(client):
+    """ensure the endpoint properly handles no api key passed in"""
+    response = client.get(
+        "/mood-captures/frequency-distribution?user_id=1",
+    )
+    assert response._status_code == 400
+    assert response.text == "Missing api key"
+
 def test_get_mood_distribution_improper_input(client):
     """ensure the endpoint is checking the input"""
     response = client.get(
@@ -235,6 +254,14 @@ def test_get_nearest_happy_location_missing_arg(client):
     )
     assert response._status_code == 400
     assert response.text == "Missing mandatory parameter: 'longitude'"
+
+def test_get_nearest_happy_location_missing_api_key(client):
+    """ensure the endpoint properly handles no api key passed in"""
+    response = client.get(
+        "/mood-captures/nearest-happy?user_id=1&latitude=0&longitude=0",
+    )
+    assert response._status_code == 400
+    assert response.text == "Missing api key"
 
 def test_get_nearest_happy_location_improper_input(client):
     """ensure the endpoint is checking the input"""

@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 def authenticate_user(user_id: int, api_key: str, session: Session):
     """Check the user exists and the api key is correct.
     Returns None on success, (message, code) tuple on failure."""
-    
-    if not isinstance(api_key, str):
+
+    if api_key is None:
+        return "Missing api key", 400
+    elif not isinstance(api_key, str):
         return "Invalid data type: api key must be a string.", 400
     
     user = User.get_user_by_id(user_id=user_id, session=session)

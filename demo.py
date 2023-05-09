@@ -1,6 +1,6 @@
 """
 This script runs a demo of hitting the api endpoints a few different ways.
-To launch the api, run `flask --app api run` in the "moods_app" directory
+To launch the api, see instructions in README.md.
 """
 import requests
 

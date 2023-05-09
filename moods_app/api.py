@@ -1,5 +1,4 @@
 from flask import Flask, request
-
 from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app.resources.user import User
 from moods_app.resources.base import Base

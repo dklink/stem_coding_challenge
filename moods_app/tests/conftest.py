@@ -1,18 +1,16 @@
 import pytest
 import warnings
-
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import SAWarning
-
-
 from sqlalchemy import create_engine
 from moods_app.resources.mood_capture import MoodCapture, Mood
 from moods_app.resources.user import User
 from moods_app.resources.base import Base
 
 
+# sqlite doesn't enforce foreign key constraints by default; this makes it do so.
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
@@ -44,5 +42,5 @@ def session(engine):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=SAWarning)
-        transaction.rollback()  # this creates a warning if rollback has already occurred - but harmless to call again
+        transaction.rollback()  # this creates a warning if rollback has already occurred, e.g. because of IntegrityError
     connection.close()
